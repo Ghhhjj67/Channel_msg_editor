@@ -1,19 +1,24 @@
 import os
+import re
 from dotenv import load_dotenv
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+import asyncio
 
 load_dotenv()
 
 Bot = Client(
     "Channel Message Editor Bot",
-    bot_token=os.environ["BOT_TOKEN"],
-    api_id=int(os.environ["API_ID"]),
-    api_hash=os.environ["API_HASH"]
+    bot_token="5598160444:AAEpXtNmrHzquJTAZB3KRYFkj3K_-p15eXo",#os.environ["BOT_TOKEN"],
+    api_id=18860540,#int(os.environ["API_ID"]),
+    api_hash="22dd2ad1706199438ab3474e85c9afab"#os.environ["API_HASH"]
 )
-
-AUTH_USERS = set(int(x) for x in os.environ.get("AUTH_USERS", "").split())
+EDIT_CHANNEL = -1001865067204
+START_MSG_ID = 672
+LAST_MSG_ID = 679
+RM_WORD = ["Here","Permanent"]#word that to be remove
+REPL_WORD = ["kuttey","film"]#word that replce RM_WORD.The word by which to replace should be on the same index in rm_word and repl_word respectively
+AUTH_USERS = set(int(x) for x in os.environ.get("AUTH_USERS", "5123176772").split())
 
 START_TEXT = """Hello {},
 I am a channel message editor bot.
@@ -173,52 +178,95 @@ async def post(bot, update):
         await update.reply_text(error)
 
 
-@Bot.on_message(filters.private & filters.reply & filters.command(["edit"]), group=2)
-async def edit(bot, update):
-    
-    if (update.text == "/edit") or (update.from_user.id not in AUTH_USERS):
-        return
-    
-    if " " in update.text:
-        command, link = update.text.split(" ", 1)
-    else:
-        return
-    
-    if "/" in link:
-        ids = link.split("/")
-        chat_id = -100 + int(ids[-2])
-        message_id = int(ids[-1])
-    else:
-        return
-    
+@Bot.on_message(filters.private  & filters.command(["edit"]), group=2)
+async def edit(bot,update):
+    editable = await update.reply_text("`Processing...`", quote=True)
+    total_msg = len(range(START_MSG_ID,LAST_MSG_ID+1))
+    failed_msg = 0 
+    edited_msg = 0
+    failed_msg_ids =[]
+    msg_have_no_caption = 0
     try:
-        user = await bot.get_chat_member(
-            chat_id=chat_id,
-            user_id=update.from_user.id
-        )
-        if user.can_be_edited != True:
-            await update.reply_text(
-                text="You can't do that, User needed can_be_edited permission."
-            )
-            return
-    except Exception as error:
-        print(error)
-        await update.reply_text(error)
-        return
+        for i in range(START_MSG_ID,LAST_MSG_ID+1):
+            msg = await bot.get_messages(EDIT_CHANNEL,i)
+            if not msg.caption:
+                msg_have_no_caption+=1
+                await editable.edit(f"**editing.....**\ntotal_msg:{total_msg}\nedited_msg:{edited_msg}\nfailed_msg:{failed_msg}\nfailed_msg_list:{failed_msg_ids}\nmsg_have_no_caption:{msg_have_no_caption}")
+                await asyncio.sleep(2)
+                
+                continue
+            if msg.caption:
+                cap = msg.caption.html
+                
+                #print(cap)
+                try:
+                    for rm , rep  in zip(RM_WORD,REPL_WORD):
+                        new_cap = re.sub(rm,rep,cap)
+                        cap=new_cap
+                        #print(new_cap)
+                    await bot.edit_message_caption(EDIT_CHANNEL,i,cap)
+                    edited_msg += 1
+                    await editable.edit(f"**editing.....**\ntotal_msg:{total_msg}\nedited_msg:{edited_msg}\nfailed_msg:{failed_msg}\nfailed_msg_list:{failed_msg_ids}\nmsg_have_no_caption:{msg_have_no_caption}")
+                    await asyncio.sleep(2)
+                except Exception as e:
+                    failed_msg+=1 
+                    failed_msg_ids.append(i)
+                    await editable.edit(f"**editing.....**\ntotal_msg:{total_msg}\nedited_msg:{edited_msg}\nfailed_msg:{failed_msg}\nfailed_msg_list:{failed_msg_ids}\nmsg_have_no_caption:{msg_have_no_caption}")
+                    print(e)
+                    await asyncio.sleep(2)
+                    continue
+                    
+            #await editable.edit(f"editing.....\ntotal_msg:{total_msg}\nedited_msg:{edited_msg}\nfailed_msg:{failed_msg}\nfailed_msg_list:{failed_msg_ids}")     
+            
+            #await asyncio.sleep(3)
+        await editable.edit(f"**Done**\ntotal_msg:{total_msg}\nedited_msg:{edited_msg}\nfailed_msg:{failed_msg}\nfailed_msg_list:{failed_msg_ids}\nmsg_have_no_caption:{msg_have_no_caption}")     
+    except Exception as e:
+        print(e)
     
-    if update.reply_to_message.text:
-        try:
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=update.reply_to_message.text,
-                reply_markup=update.reply_to_message.reply_markup,
-                disable_web_page_preview=True
-            )
-        except Exception as error:
-            await update.reply_text(error)
-    else:
-        await update.reply_text("I can edit text only")
+    
+    # if (update.text == "/edit") or (update.from_user.id not in AUTH_USERS):
+    #     return
+    
+    # if " " in update.text:
+    #     command, link = update.text.split(" ", 1)
+    # else:
+    #     return
+    
+    # if "/" in link:
+    #     ids = link.split("/")
+    #     chat_id = -100 + int(ids[-2])
+    #     message_id = int(ids[-1])
+    # else:
+    #     return
+    
+    # try:
+    #     user = await bot.get_chat_member(
+    #         chat_id=chat_id,
+    #         user_id=update.from_user.id
+    #     )
+    #     if user.can_be_edited != True:
+    #         await update.reply_text(
+    #             text="You can't do that, User needed can_be_edited permission."
+    #         )
+    #         return
+    # except Exception as error:
+    #     print(error)
+    #     await update.reply_text(error)
+    #     return
+    
+    # if update.reply_to_message.text:
+    #     try:
+    #         await bot.edit_message_text(
+    #             chat_id=chat_id,
+    #             message_id=message_id,
+    #             text=update.reply_to_message.text,
+    #             reply_markup=update.reply_to_message.reply_markup,
+    #             disable_web_page_preview=True
+    #         )
+    #     except Exception as error:
+    #         await update.reply_text(error)
+    # else:
+    #     await update.reply_text("I can edit text only")
 
 
 Bot.run()
