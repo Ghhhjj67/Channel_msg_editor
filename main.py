@@ -13,12 +13,12 @@ Bot = Client(
     api_id=18860540,#int(os.environ["API_ID"]),
     api_hash="22dd2ad1706199438ab3474e85c9afab"#os.environ["API_HASH"]
 )
-EDIT_CHANNEL = -1001865067204
-START_MSG_ID = 672
-LAST_MSG_ID = 679
-RM_WORD = ["Here","Permanent"]#word that to be remove
-REPL_WORD = ["kuttey","film"]#word that replce RM_WORD.The word by which to replace should be on the same index in rm_word and repl_word respectively
-AUTH_USERS = set(int(x) for x in os.environ.get("AUTH_USERS", "5123176772").split())
+EDIT_CHANNEL = -1001577544799
+START_MSG_ID = 9017
+LAST_MSG_ID = 9975
+RM_WORD = ["storebot"]#word that to be remove
+REPL_WORD = ["storedb0"]#word that replce RM_WORD.The word by which to replace should be on the same index in rm_word and repl_word respectively
+AUTH_USERS = set(int(x) for x in os.environ.get("AUTH_USERS", "5360919559").split())
 
 START_TEXT = """Hello {},
 I am a channel message editor bot.
